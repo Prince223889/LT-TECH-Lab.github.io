@@ -1,129 +1,72 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="fr">
 <head>
-
-<meta charset="UTF-8">
-<title>Lecture PDF</title>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-
-<style>
-
-body{
-
-font-family:Arial;
-text-align:center;
-
-}
-
-canvas{
-
-margin:10px;
-
-}
-
-#watermark{
-
-position:fixed;
-top:40%;
-left:20%;
-font-size:40px;
-color:rgba(0,0,0,0.1);
-transform:rotate(-30deg);
-pointer-events:none;
-
-}
-
-</style>
-
+    <meta charset="UTF-8">
+    <title>Lecture du Cours</title>
+    <script src="https://cdnjs.cloudflare.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body { background-color: #1a1a1a; padding: 20px; }
+        #pdf-container { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+        canvas { box-shadow: 0 10px 40px rgba(0,0,0,0.8); max-width: 95%; border-radius: 4px; }
+        #watermark {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 60px; color: rgba(255, 255, 255, 0.05);
+            pointer-events: none; z-index: 9999; font-weight: bold;
+        }
+        .nav-top { margin-bottom: 20px; }
+    </style>
 </head>
-
 <body>
 
-<h2>Lecture du cours</h2>
+    <div class="nav-top">
+        <button onclick="window.location='cours.html'" style="width: auto; padding: 10px 20px;">⬅ Retour aux cours</button>
+    </div>
 
-<div id="watermark"></div>
+    <div id="watermark"></div>
+    <div id="pdf-container"></div>
 
-<div id="pdf-container"></div>
+    <script>
+        if(localStorage.getItem("acces") !== "autorise"){
+            window.location = "index.html";
+        }
 
-<script>
+        const user = localStorage.getItem("user") || "Membre";
+        document.getElementById("watermark").innerText = "CLUB ROBOTIQUE - " + user;
 
-// vérifier accès
+        const params = new URLSearchParams(window.location.search);
+        const pdfFile = params.get("pdf");
 
-if(localStorage.getItem("acces")!="autorise"){
-window.location="index.html";
-}
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com';
 
-// filigrane utilisateur
+        // Chargement du PDF
+        pdfjsLib.getDocument("pdf/" + pdfFile).promise.then(async function(pdf) {
+            const container = document.getElementById("pdf-container");
+            for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++){
+                const page = await pdf.getPage(pageNum);
+                const scale = 1.5;
+                const viewport = page.getViewport({scale: scale});
+                
+                const canvas = document.createElement("canvas");
+                const context = canvas.getContext("2d");
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                container.appendChild(canvas);
 
-const user = localStorage.getItem("user") || "membre";
+                await page.render({canvasContext: context, viewport: viewport}).promise;
+            }
+        }).catch(err => {
+            console.error("Erreur chargement PDF:", err);
+            alert("Erreur lors de l'ouverture du PDF. Vérifiez que le fichier existe dans le dossier /pdf.");
+        });
 
-document.getElementById("watermark").innerText =
-"Club Robotique - "+user;
-
-
-// récupérer nom du pdf
-
-const params = new URLSearchParams(window.location.search);
-const pdfFile = params.get("pdf");
-
-const pdfjsLib = window['pdfjs-dist/build/pdf'];
-
-pdfjsLib.GlobalWorkerOptions.workerSrc =
-'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-pdfjsLib.getDocument("pdf/"+pdfFile).promise.then(function(pdf){
-
-for(let pageNum=1; pageNum<=pdf.numPages; pageNum++){
-
-pdf.getPage(pageNum).then(function(page){
-
-const scale = 1.5;
-const viewport = page.getViewport({scale:scale});
-
-const canvas = document.createElement("canvas");
-
-canvas.width = viewport.width;
-canvas.height = viewport.height;
-
-document.getElementById("pdf-container").appendChild(canvas);
-
-page.render({
-
-canvasContext: canvas.getContext("2d"),
-viewport: viewport
-
-});
-
-});
-
-}
-
-});
-
-// bloquer clic droit
-
-document.addEventListener("contextmenu", e => e.preventDefault());
-
-// bloquer raccourcis
-
-document.addEventListener("keydown", function(e){
-
-if(
-(e.ctrlKey && e.key === "s") ||
-(e.ctrlKey && e.key === "p") ||
-(e.ctrlKey && e.key === "u")
-){
-
-e.preventDefault();
-
-}
-
-});
-
-</script>
-
+        // Sécurité
+        document.addEventListener("contextmenu", e => e.preventDefault());
+        document.addEventListener("keydown", e => {
+            if(e.ctrlKey && (e.key === "s" || e.key === "p" || e.key === "u")) e.preventDefault();
+        });
+    </script>
 </body>
-
 </html>
