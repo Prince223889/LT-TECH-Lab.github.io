@@ -1,27 +1,27 @@
-const CACHE_NAME = 'robot-v3'; // Change le nom (v3) à chaque grosse modif
+const CACHE_NAME = 'robot-cache-vFINAL';
 const ASSETS = [
-  './',
-  './index.html',
-  './cours.html',
-  './lecteur.html',
-  './style.css',
-  './script.js',
-  './users.js',
-  'https://cdnjs.cloudflare.com',
-  'https://cdnjs.cloudflare.com'
+  'index.html',
+  'cours.html',
+  'lecteur.html',
+  'style.css',
+  'script.js',
+  'users.js',
+  'manifest.json'
 ];
 
-// Installation et mise en cache immédiate
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
+// Installation
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS);
+    })
   );
-  self.skipWaiting(); // Force l'activation
+  self.skipWaiting();
 });
 
-// Nettoyage des vieux caches
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
+// Activation (nettoie les anciens caches)
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(keys.map((key) => {
         if (key !== CACHE_NAME) return caches.delete(key);
@@ -30,9 +30,18 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Stratégie : Réseau d'abord, sinon Cache (pour les PDF)
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
+// Stratégie : Cache d'abord, puis Réseau (Idéal pour le hors-ligne)
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      return cachedResponse || fetch(event.request).then((response) => {
+        // Optionnel : mettre en cache les PDF consultés au fur et à mesure
+        if (event.request.url.includes('.pdf')) {
+          let responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+        }
+        return response;
+      });
+    })
   );
 });
