@@ -2,134 +2,153 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Lecture du Cours - Club Robotique</title>
-    <!-- LIENS CORRIGÉS VERS PDF.JS -->
-    <script src="https://cdnjs.cloudflare.com"></script>
-    <link rel="stylesheet" href="style.css">
+    <title>Lecteur PDF - Club Robotique</title>
+    
+    <!-- Importation des polices Tech -->
+    <link href="https://fonts.googleapis.com" rel="stylesheet">
+    
+    <!-- Script PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
     <style>
-        body { 
-            background-color: #1a1a1a; 
-            padding: 20px; 
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background-color: #050a0f;
+            background-image: radial-gradient(circle at center, #102030 0%, #050a0f 100%);
+            color: #ffffff;
             margin: 0;
+            padding: 20px;
+            text-align: center;
         }
-        #pdf-container { 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            gap: 25px; 
-            padding-top: 20px;
+
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            color: #00d4ff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            margin-bottom: 30px;
         }
-        canvas { 
-            box-shadow: 0 10px 50px rgba(0,0,0,0.9); 
-            max-width: 95%; 
-            border-radius: 8px; 
-            background-color: white;
+
+        /* Bouton Retour stylisé */
+        .btn-back {
+            font-family: 'Orbitron', sans-serif;
+            background: transparent;
+            color: #00d4ff;
+            border: 1px solid #00d4ff;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: 0.3s;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            font-size: 12px;
         }
+
+        .btn-back:hover {
+            background: #00d4ff;
+            color: #050a0f;
+            box-shadow: 0 0 15px #00d4ff;
+        }
+
+        #pdf-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 30px;
+            padding-bottom: 50px;
+        }
+
+        canvas {
+            border: 2px solid #30475e;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            max-width: 95%;
+            height: auto !important;
+            border-radius: 4px;
+            background-color: white; /* Fond blanc pour le confort de lecture du PDF */
+        }
+
+        /* Filigrane amélioré */
         #watermark {
-            position: fixed; 
-            top: 50%; 
+            position: fixed;
+            top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 50px; 
-            color: rgba(255, 255, 255, 0.07);
-            pointer-events: none; 
-            z-index: 9999; 
+            transform: translate(-50%, -50%) rotate(-35deg);
+            font-size: clamp(30px, 5vw, 60px); /* Taille adaptative */
+            color: rgba(255, 255, 255, 0.05);
+            pointer-events: none;
+            z-index: 1000;
             font-weight: bold;
             text-transform: uppercase;
-            text-align: center;
-            width: 100%;
-        }
-        .nav-top { 
-            text-align: center;
-            margin-bottom: 20px; 
-        }
-        /* Style du bouton retour */
-        .btn-back {
-            background-color: #30475e;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: 0.3s;
-        }
-        .btn-back:hover {
-            background-color: #00d4ff;
-            color: #0e1621;
+            white-space: nowrap;
+            font-family: 'Orbitron', sans-serif;
         }
     </style>
 </head>
+
 <body>
 
-    <div class="nav-top">
-        <button class="btn-back" onclick="window.location='cours.html'">⬅ Retour aux cours</button>
-    </div>
+    <button class="btn-back" onclick="window.location='cours.html'">⬅ Retour aux cours</button>
+
+    <h2>Analyse du module</h2>
 
     <div id="watermark"></div>
+
     <div id="pdf-container"></div>
 
     <script>
-        // 1. Vérification de l'accès
-        if(localStorage.getItem("acces") !== "autorise"){
+        // 1. Vérification accès
+        if(localStorage.getItem("acces") != "autorise"){
             window.location = "index.html";
         }
 
-        // 2. Configuration du Filigrane
-        const user = localStorage.getItem("user") || "Membre";
-        document.getElementById("watermark").innerText = "CLUB ROBOTIQUE\nPROPRIÉTÉ DE : " + user;
+        // 2. Filigrane utilisateur
+        const user = localStorage.getItem("user") || "membre";
+        document.getElementById("watermark").innerText = "CLUB ROBOTIQUE - " + user;
 
-        // 3. Récupération du fichier PDF
+        // 3. Récupérer et charger le PDF
         const params = new URLSearchParams(window.location.search);
         const pdfFile = params.get("pdf");
 
-        if (!pdfFile) {
-            alert("Aucun fichier PDF spécifié.");
-            window.location = "cours.html";
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        if (pdfFile) {
+            pdfjsLib.getDocument("pdf/" + pdfFile).promise.then(async function(pdf) {
+                const container = document.getElementById("pdf-container");
+                
+                // Boucle asynchrone pour garantir l'ordre des pages
+                for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++){
+                    const page = await pdf.getPage(pageNum);
+                    const scale = 1.5;
+                    const viewport = page.getViewport({scale: scale});
+
+                    const canvas = document.createElement("canvas");
+                    const context = canvas.getContext("2d");
+
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+                    container.appendChild(canvas);
+
+                    await page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    }).promise;
+                }
+            }).catch(err => {
+                console.error("Erreur chargement:", err);
+                alert("Fichier introuvable. Vérifiez le dossier /pdf.");
+            });
         }
 
-        // 4. Initialisation de PDF.js avec les bons liens
-        const pdfjsLib = window['pdfjs-dist/build/pdf'];
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com';
-
-        // 5. Chargement et rendu du PDF
-        const loadingTask = pdfjsLib.getDocument("pdf/" + pdfFile);
-        
-        loadingTask.promise.then(async function(pdf) {
-            const container = document.getElementById("pdf-container");
-            
-            // On boucle sur toutes les pages pour les afficher l'une après l'autre
-            for(let pageNum = 1; pageNum <= pdf.numPages; pageNum++){
-                const page = await pdf.getPage(pageNum);
-                
-                const scale = 1.5; // Ajuste la qualité (1.5 est un bon compromis)
-                const viewport = page.getViewport({scale: scale});
-                
-                const canvas = document.createElement("canvas");
-                const context = canvas.getContext("2d");
-                
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
-                container.appendChild(canvas);
-
-                await page.render({
-                    canvasContext: context, 
-                    viewport: viewport
-                }).promise;
-            }
-        }).catch(err => {
-            console.error("Erreur détaillée :", err);
-            alert("Impossible de charger le PDF. \n1. Vérifie que le fichier est bien dans le dossier 'pdf/' \n2. Vérifie les majuscules/minuscules.");
-        });
-
-        // 6. Sécurité anti-copie
+        // 4. Sécurité (clic droit et raccourcis)
         document.addEventListener("contextmenu", e => e.preventDefault());
         document.addEventListener("keydown", e => {
-            if(e.ctrlKey && (e.key === "s" || e.key === "p" || e.key === "u")) {
+            if (e.ctrlKey && (e.key === "s" || e.key === "p" || e.key === "u")) {
                 e.preventDefault();
-                alert("Le téléchargement et l'impression sont désactivés.");
             }
         });
     </script>
+
 </body>
 </html>
