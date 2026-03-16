@@ -1,10 +1,11 @@
 {
   "short_name": "RobotClub",
   "name": "Club Robotique App",
+  "description": "Plateforme de cours du Club Robotique",
   "icons":,
   "start_url": "./index.html",
   "background_color": "#050a0f",
   "display": "standalone",
-  "theme_color": "#00d4ff"
+  "theme_color": "#00d4ff",
+  "scope": "./"
 }
-
