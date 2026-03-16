@@ -25,10 +25,9 @@
     <!-- Script pour le mode hors-ligne -->
     <script>
       if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js')
-          .then(() => console.log("Système de secours activé (Hors-ligne)"))
-          .catch((err) => console.log("Erreur PWA :", err));
+        navigator.serviceWorker.register('./sw.js?v=3'); // Le ?v=3 force le navigateur à voir le nouveau fichier
       }
     </script>
+
 </body>
 </html>
