@@ -1,33 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-
-<meta charset="UTF-8">
-<title>Club Robotique</title>
-
-<link rel="stylesheet" href="style.css">
-
+    <meta charset="UTF-8">
+    <title>Club Robotique - Connexion</title>
+    <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
-<h2>Connexion Club Robotique</h2>
+    <div class="container">
+        <h2>Connexion</h2>
+        <input type="text" id="username" placeholder="Nom d'utilisateur">
+        <input type="password" id="code" placeholder="Code personnel">
+        <button onclick="login()">Se connecter</button>
+        <p id="msg"></p>
+    </div>
 
-<input type="text" id="username" placeholder="Nom">
-
-<br><br>
-
-<input type="password" id="code" placeholder="Code personnel">
-
-<br><br>
-
-<button onclick="login()">Connexion</button>
-
-<p id="msg"></p>
-
-<script src="users.js"></script>
-<script src="script.js"></script>
-
+    <script src="users.js"></script>
+    <script src="script.js"></script>
 </body>
-
 </html>
